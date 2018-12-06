@@ -10,8 +10,8 @@
     "react-router-dom": "^4.2.2",
     "react-scripts": "1.1.4",
     "semantic-ui-css": "^2.3.2",
-    "semantic-ui-react": "^0.82.0",
-    "shortid": "^2.2.8",
+    "semantic-ui-react": "^0.82.1",
+    "shortid": "^2.2.12",
     "superagent": "^3.8.3"
   },
   "scripts": {

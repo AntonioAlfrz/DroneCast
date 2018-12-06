@@ -1,6 +1,7 @@
 /node_modules
 TODO
 test.js
+.vs
 /socket
 /apps/
 /database/media/

@@ -20,10 +20,10 @@ const options = process.env.DB_OPTIONS
 // Connection URL
 let url
 if (username) {
-    url = `mongodb://${username}:${password}@${host}:${port}/${options}`
+    url = `mongodb://${username}:${password}@${host}:${port}/${dbName}?${options}`
     //url = 'mongodb://' + username + ':' + password + '@' + host + '/' + options;
 } else {
-    url = 'mongodb://' + host + '/' + options
+    url = `mongodb://${host}:${port}/${dbName}`
 }
 
 // Collection name
@@ -35,31 +35,29 @@ const displaySchema = require('./DisplaySchema');
 
 async function testConnection() {
     try {
-        const client = await MongoClient.connect(url);
+        const client = await MongoClient.connect(url, { useNewUrlParser: true });
         console.log("dbLib: Connected successfully to database");
         client.close();
     } catch (err) {
-        console.log(err.stack);
+        throw Error(err.stack);
     }
 }
-async function testError() {
+function testError() {
     throw Error("Test error")
 }
 async function createCol(dbName, colName) {
-    var schema;
-
-    switch (colName) {
-        case "Apps":
-            schema = appSchema
-            break
-        case "Displays":
-            schema = displaySchema
-            break
-        default:
-            schema = appSchema
-    }
+    // switch (colName) {
+    //     case "Apps":
+    //         schema = appSchema
+    //         break
+    //     case "Displays":
+    //         schema = displaySchema
+    //         break
+    //     default:
+    //         schema = appSchema
+    // }
     try {
-        const client = await MongoClient.connect(url);
+        const client = await MongoClient.connect(url, { useNewUrlParser: true });
         const db = client.db(dbName);
         let col = await db.createCollection(colName)
         // let col = await db.createCollection(colName, {
@@ -68,39 +66,39 @@ async function createCol(dbName, colName) {
         assert.equal(colName, col.collectionName);
         client.close();
     } catch (err) {
-        console.log(err.stack);
+        throw Error(err.stack);
     }
 }
 
 async function listAllApp() {
     try {
-        const client = await MongoClient.connect(url);
+        const client = await MongoClient.connect(url, { useNewUrlParser: true });
         let db = client.db(dbName);
         let col = db.collection(appCol);
         let data = await col.find().toArray();
         client.close();
         return data;
     } catch (err) {
-        console.log(err.stack);
+        throw Error(err.stack);
     }
 }
 
 async function findApp(id) {
     try {
-        const client = await MongoClient.connect(url);
+        const client = await MongoClient.connect(url, { useNewUrlParser: true });
         let db = client.db(dbName);
         let col = db.collection(appCol);
         let data = await col.findOne(mongo.ObjectID(id));
         client.close();
         return data;
     } catch (err) {
-        console.log(err.stack);
+        throw Error(err.stack);
     }
 }
 
 async function updateAppData(id, appdata) {
     try {
-        const client = await MongoClient.connect(url);
+        const client = await MongoClient.connect(url, { useNewUrlParser: true });
         const db = client.db(dbName);
 
         const col = db.collection(appCol);
@@ -109,19 +107,19 @@ async function updateAppData(id, appdata) {
 
         client.close();
     } catch (err) {
-        console.log(err.stack);
+        throw Error(err.stack);
     }
 }
 
 async function updateAppDisplays(id, displays) {
     try {
-        const client = await MongoClient.connect(url);
+        const client = await MongoClient.connect(url, { useNewUrlParser: true });
         const db = client.db(dbName);
         const col = db.collection(appCol);
         await col.updateOne({ _id: mongo.ObjectID(id) }, { $set: { displays: displays } });
         client.close();
     } catch (err) {
-        console.log(err.stack);
+        throw Error(err.stack);
     }
 }
 
@@ -131,7 +129,7 @@ async function addAppContent(id, index, content) {
     //const setName = { [nameField]: folderName }
     const push = { [field]: content }
     try {
-        const client = await MongoClient.connect(url);
+        const client = await MongoClient.connect(url, { useNewUrlParser: true });
         const db = client.db(dbName);
 
         const col = db.collection(appCol);
@@ -140,14 +138,14 @@ async function addAppContent(id, index, content) {
         const r = await col.updateOne({ _id: mongo.ObjectID(id) }, { $addToSet: push });
         client.close();
     } catch (err) {
-        console.log(err.stack);
+        throw Error(err.stack);
     }
 }
 async function deleteAppContent(id, index, content) {
     const field = `appdata.folders.${index}.content`
     const pull = { [field]: [content] }
     try {
-        const client = await MongoClient.connect(url);
+        const client = await MongoClient.connect(url, { useNewUrlParser: true });
         const db = client.db(dbName);
 
         const col = db.collection(appCol);
@@ -155,7 +153,7 @@ async function deleteAppContent(id, index, content) {
         const r = await col.updateOne({ _id: mongo.ObjectID(id) }, { $pullAll: pull });
         client.close();
     } catch (err) {
-        console.log(err.stack);
+        throw Error(err.stack);
     }
 }
 async function addAppCode(index, id, folder, path, folderName, file) {
@@ -163,7 +161,7 @@ async function addAppCode(index, id, folder, path, folderName, file) {
     const nameField = `appdata.folders.${index}.name`
     const setName = { [nameField]: folderName }
     try {
-        const client = await MongoClient.connect(url);
+        const client = await MongoClient.connect(url, { useNewUrlParser: true });
         const db = client.db(dbName);
         const col = db.collection(appCol);
         const push = { [field]: path }
@@ -187,13 +185,14 @@ async function addAppCode(index, id, folder, path, folderName, file) {
         // }
         client.close();
     } catch (err) {
-        console.log(err);
+        throw Error(err);
     }
 }
 
 async function newApp(name, author, scenario, category, appdata, displays) {
+    if (!name) throw Error("Name is not defined")
     try {
-        const client = await MongoClient.connect(url);
+        const client = await MongoClient.connect(url, { useNewUrlParser: true });
         let db = client.db(dbName);
         let r = await db.collection(appCol).insertOne(
             {
@@ -205,55 +204,55 @@ async function newApp(name, author, scenario, category, appdata, displays) {
         client.close();
         return r.ops[0]._id
     } catch (err) {
-        console.log(err.stack);
+        throw Error(err.stack);
     }
 }
 
 async function insertDisplay(name, onair) {
     try {
-        const client = await MongoClient.connect(url);
+        const client = await MongoClient.connect(url, { useNewUrlParser: true });
         let db = client.db(dbName);
         const col = db.collection(displayCol);
         const result = await col.updateOne({ name: name }, { $set: { name: name, onair: onair } }, { upsert: true });
         client.close();
     } catch (err) {
-        console.log(err.stack);
+        throw Error(err.stack);
     }
 }
 
 async function updateDisplay(id, name) {
     try {
-        const client = await MongoClient.connect(url);
+        const client = await MongoClient.connect(url, { useNewUrlParser: true });
         let db = client.db(dbName);
         const col = db.collection(displayCol);
         const result = await col.updateOne({ _id: mongo.ObjectID(id) }, { $set: { name: name } });
         if (result.upsertedCount) {
-            console.log("DB: New Display -", name)
+            throw Error("DB: New Display -", name)
         }
         client.close();
     } catch (err) {
-        console.log(err.stack);
+        throw Error(err.stack);
     }
     // Change name in appdata
 }
 
 async function listAllDisplays() {
     try {
-        const client = await MongoClient.connect(url);
+        const client = await MongoClient.connect(url, { useNewUrlParser: true });
         let db = client.db(dbName);
         let col = db.collection(displayCol);
         let data = await col.find().toArray();
         client.close();
         return data;
     } catch (err) {
-        console.log(err.stack);
+        throw Error(err.stack);
     }
 }
 
 async function dropCol(name) {
     let client;
     try {
-        client = await MongoClient.connect(url);
+        client = await MongoClient.connect(url, { useNewUrlParser: true });
         let db;
         if (name) {
             db = client.db(name);
@@ -266,7 +265,7 @@ async function dropCol(name) {
             await db.collection(appCol).drop();
         }
     } catch (err) {
-        console.log(err.stack);
+        throw Error(err.stack);
     }
     if (client) {
         client.close();
@@ -275,7 +274,7 @@ async function dropCol(name) {
 
 async function deleteApp(id) {
     try {
-        const client = await MongoClient.connect(url);
+        const client = await MongoClient.connect(url, { useNewUrlParser: true });
         const db = client.db(dbName);
 
         let col = db.collection(appCol);
@@ -285,13 +284,13 @@ async function deleteApp(id) {
 
         client.close();
     } catch (err) {
-        console.log(err.stack);
+        throw Error(err.stack);
     }
 }
 
 async function deleteDisplay(id) {
     try {
-        const client = await MongoClient.connect(url);
+        const client = await MongoClient.connect(url, { useNewUrlParser: true });
         const db = client.db(dbName);
 
         const col = db.collection(displayCol);
@@ -303,7 +302,7 @@ async function deleteDisplay(id) {
         console.log("DB: Delete Display -", id)
         client.close();
     } catch (err) {
-        console.log(err.stack);
+        throw Error(err.stack);
     }
 }
 
